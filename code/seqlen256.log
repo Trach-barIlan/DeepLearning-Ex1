@@ -1,0 +1,99 @@
+Parameter count: 2.19M
+Seen 10 batches. last loss is: 3.434626579284668
+Seen 20 batches. last loss is: 3.1490671634674072
+Seen 30 batches. last loss is: 2.9588699340820312
+Seen 40 batches. last loss is: 2.881906509399414
+Seen 50 batches. last loss is: 2.7823309898376465
+Seen 60 batches. last loss is: 2.7173781394958496
+Seen 70 batches. last loss is: 2.674919605255127
+Seen 80 batches. last loss is: 2.657473087310791
+Seen 90 batches. last loss is: 2.64138126373291
+Seen 100 batches. last loss is: 2.614264488220215
+Model sample: '''d me:
+Anthe gM3 f,vZToyorPa's tFo bthenk maUKQABXSekoorseser b, sYo c mILEMalo
+Athe y wleedetyor uuriseshano thor3 icop minearengllp thall ZOd tharellsm thendenandors.
+
+CI ' tb, t:o wisulde foctmelyot <PAD>y f wowy bes tge zeIomesoVAI?
+ATHipeil thaver aeveus forewholesde!
+ptha titheamhiI <PAD>! t&end:DGEN:
+NGNARAll; gRO seh br.
+
+
+-:
+HiraghVzbeorcvet fo benZER:
+
+3r;
+A?
+, mig werid che bdry:Wiss;D TI t athed d byisilothontindrerofr bpm leanitste ny the IN; ce t t foi, mantunhamyat;
+NEne,o y wbr:
+Cjur miin'''
+
+Seen 110 batches. last loss is: 2.6007516384124756
+Seen 120 batches. last loss is: 2.5437004566192627
+Seen 130 batches. last loss is: 2.5408096313476562
+Seen 140 batches. last loss is: 2.5339999198913574
+Seen 150 batches. last loss is: 2.505577564239502
+Seen 160 batches. last loss is: 2.5323734283447266
+Seen 170 batches. last loss is: 2.5261073112487793
+Seen 180 batches. last loss is: 2.5329222679138184
+Seen 190 batches. last loss is: 2.5100655555725098
+Seen 200 batches. last loss is: 2.515136480331421
+Model sample: ''' yomem ter le derer weng thonasitherk the hil id I t odeput aner yod d, liomo hol, m men geno-soncowinsyere-oe thathis ss hevotashen s th
+
+Sis;a w I out y, rlou hin hath, twn.
+ch rd windouden he s ser in mop, I int:
+
+
+
+g inonge IWifourma's:
+Fncyourly thameren myo aveay hiF ghe.
+VIABAlo ge.
+UKI hire, Ios qutheamyouremout ther ioulalen s my bushqur bt.
+
+Thenous fanthalim, d arye o me, t owele?
+Onjot s, itour.
+LI wh t<PAD>ercZI bicAngth nnhesr asewrr n 'd my'saal thutheelbO,
+
+Pe, brerengs
+Therithe. leu'''
+
+Seen 210 batches. last loss is: 2.5223655700683594
+Seen 220 batches. last loss is: 2.5224597454071045
+Seen 230 batches. last loss is: 2.4817047119140625
+Seen 240 batches. last loss is: 2.517955780029297
+Seen 250 batches. last loss is: 2.5005409717559814
+Seen 260 batches. last loss is: 2.5029730796813965
+Seen 270 batches. last loss is: 2.489908218383789
+Seen 280 batches. last loss is: 2.483316421508789
+Seen 290 batches. last loss is: 2.4764962196350098
+Seen 300 batches. last loss is: 2.486269235610962
+Model sample: '''rke urnd-3 overincure ivime aru,
+RE se'soucerey chinmeow t hous
+S:
+
+A
+I acoos tan mo;
+ond.
+yod,
+TELON?
+INS:
+cth pme fomag te; feraurersre t nsedari!
+
+SROROXDActharoth IOstsswnils s d t cur asel u'w tseas Ohilomy tave thofree, ndegiditstowalo prne I hin anoutore ty ubout,
+TF 'd lomit ounge, geis I ichco, ff fr ari.
+
+And Rized,'st,
+'iCETh pune athe man an bre!
+AR, hio ardyomes s;t ber inealowincean 'cut w s m'sl, lot houlan g thyowl n sriso k t.
+I f Hanoms, gr toy Inthathe'The mangour fowinthyo be'''
+
+Seen 310 batches. last loss is: 2.471120834350586
+Seen 320 batches. last loss is: 2.457979202270508
+Seen 330 batches. last loss is: 2.4413599967956543
+Seen 340 batches. last loss is: 2.447936534881592
+Seen 350 batches. last loss is: 2.477273941040039
+Seen 360 batches. last loss is: 2.4643239974975586
+Seen 370 batches. last loss is: 2.4467716217041016
+Seen 380 batches. last loss is: 2.421788215637207
+Seen 390 batches. last loss is: 2.44730544090271
+Seen 400 batches. last loss is: 2.4206433296203613
