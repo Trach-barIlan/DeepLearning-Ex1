@@ -4,6 +4,7 @@ import argparse
 import math
 import os
 import random
+import time
 import torch
 
 from hyperparams import defaults as hparams
@@ -87,7 +88,13 @@ if __name__ == "__main__":
 
     learning_rate = args.learning_rate
     gradient_clipping = args.gradient_clipping
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+    print(f"Using device: {device}")
 
     num_batches_to_train = args.num_batches
 
@@ -188,6 +195,10 @@ if __name__ == "__main__":
     model.train()
 
     num_batches = start_batch
+    train_start_time = time.time()
+    last_log_time = train_start_time
+    last_log_batch = num_batches
+
     os.makedirs(checkpoint_dir, exist_ok=True)
     while True:
         for batch in data.batch_items(data_iter, batch_size):
@@ -210,7 +221,23 @@ if __name__ == "__main__":
 
             num_batches += 1
             if num_batches % 10 == 0:
-                print(f"Seen {num_batches} batches. last loss is: {loss.item()}")
+                now = time.time()
+                elapsed_s = now - train_start_time
+                interval_s = now - last_log_time
+                interval_batches = num_batches - last_log_batch
+                batches_per_sec = interval_batches / max(interval_s, 1e-8)
+                remaining_batches = max(0, num_batches_to_train - num_batches)
+                eta_s = remaining_batches / max(batches_per_sec, 1e-8)
+                current_lr = optimizer.param_groups[0]["lr"]
+
+                print(
+                    f"Seen {num_batches} batches | loss={loss.item():.4f} | "
+                    f"elapsed={elapsed_s/60:.1f}m | since_last_log={interval_s:.2f}s | "
+                    f"speed={batches_per_sec:.2f} batch/s | eta={eta_s/60:.1f}m | lr={current_lr:.2e}"
+                )
+
+                last_log_time = now
+                last_log_batch = num_batches
 
             if validation_iter is not None and validation_every > 0 and num_batches % validation_every == 0:
                 validation_loss, validation_perplexity = evaluate_model(
@@ -225,19 +252,19 @@ if __name__ == "__main__":
                 )
 
             if args.sample_every > 0 and num_batches % args.sample_every == 0:
-                for _ in range(1):
-                    model.eval()
-                    sampled = tokenizer.detokenize(
-                        model.better_sample_continuation(
-                            tokenizer.tokenize(args.sample_prefix),
-                            args.sample_tokens,
-                            temperature=args.sample_temperature,
-                            topK=args.sample_topk,
-                        )
+                model.eval()
+                sampled = tokenizer.detokenize(
+                    model.better_sample_continuation(
+                        tokenizer.tokenize(args.sample_prefix),
+                        args.sample_tokens,
+                        temperature=args.sample_temperature,
+                        topK=args.sample_topk,
                     )
-                    model.train()
-                    print(f"Model sample: '''{sampled}'''")
-                print("")
+                )
+                model.train()
+                sample_preview = sampled.replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")
+                sample_preview = sample_preview[:160] + ("..." if len(sample_preview) > 160 else "")
+                print(f"Sample | prefix='{args.sample_prefix}' | chars={len(sampled)} | text='{sample_preview}'")
 
             if checkpoint_every > 0 and num_batches % checkpoint_every == 0:
                 checkpoint_path = os.path.join(checkpoint_dir, f"checkpoint_{num_batches}.pt")
