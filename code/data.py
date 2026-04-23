@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Iterator
+import json
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -41,14 +42,28 @@ class CharTokenizer:
             strs = [s for s in strs if len(s) == 1]
         return "".join(strs)
 
+    def state_dict(self) -> dict:
+        return {
+            "symbols": self.symbols,
+            "vocab": self.vocab,
+        }
+
+    def load_state_dict(self, state: dict) -> None:
+        self.symbols = list(state["symbols"])
+        self.vocab = list(state["vocab"])
+        self.tokens = set(self.vocab[len(self.symbols):])
+        self.stoi = {s:i for i, s in enumerate(self.vocab)}
+
     def save(self, path: str) -> None:
-        # TODO: save it.
-        ...
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(self.state_dict(), fh, ensure_ascii=False)
 
     @staticmethod
     def load(path: str) -> CharTokenizer:
         tokenizer = CharTokenizer()
-        # TODO: load it.
+        with open(path, "r", encoding="utf-8") as fh:
+            state = json.load(fh)
+        tokenizer.load_state_dict(state)
         return tokenizer
 
 class RandomOrderDataIterator:
@@ -74,13 +89,17 @@ def load_data(path: str) -> [CharTokenizer, list[list[int]]]:
             text = fh.read()
             tokenizer.train(text)
 
+    data = tokenize_data(path, tokenizer)
+    return (tokenizer, data)
+
+
+def tokenize_data(path: str, tokenizer: CharTokenizer) -> list[list[int]]:
     data: list[list[int]] = []
     for fname in glob.glob(f"{path}/*.txt"):
         with open(fname) as fh:
             text = fh.read()
             data.append(tokenizer.tokenize(text))
-
-    return (tokenizer, data)
+    return data
 
 def batch_items(data_iter: Iterator[list[int]], batch_size: int = 2) -> Iterator[torch.LongTensor]:
     batch = []

@@ -5,12 +5,13 @@ import attention
 import mlp
 
 class TransformerDecoderBlock(nn.Module):
-    def __init__(self, n_heads: int, embed_size: int, mlp_hidden_size: int, max_context_len, with_residuals: bool = False, pre_norm: bool = True):
+    def __init__(self, n_heads: int, embed_size: int, mlp_hidden_size: int, max_context_len, with_residuals: bool = False, pre_norm: bool = True, dropout: float = 0.0):
         super().__init__()
         self.causal_attention = attention.CausalSelfAttention(embed_size, n_heads, max_context_len)
         self.mlp = mlp.MLP(embed_size, mlp_hidden_size)
         self.layer_norm_1 = nn.LayerNorm(embed_size)
         self.layer_norm_2 = nn.LayerNorm(embed_size)
+        self.dropout = nn.Dropout(dropout)
         self.with_residuals = with_residuals
         self.pre_norm = pre_norm
 
@@ -19,19 +20,19 @@ class TransformerDecoderBlock(nn.Module):
             x = inputs
             if self.pre_norm:
                 # Pre-norm: apply norm before sub-layer, then add residual
-                x = x + self.causal_attention(self.layer_norm_1(x))
-                x = x + self.mlp(self.layer_norm_2(x))
+                x = x + self.dropout(self.causal_attention(self.layer_norm_1(x)))
+                x = x + self.dropout(self.mlp(self.layer_norm_2(x)))
             else:
                 # Post-norm: apply sub-layer, add residual, then apply norm
-                x = self.layer_norm_1(x + self.causal_attention(x))
-                x = self.layer_norm_2(x + self.mlp(x))
+                x = self.layer_norm_1(x + self.dropout(self.causal_attention(x)))
+                x = self.layer_norm_2(x + self.dropout(self.mlp(x)))
             return x
         else:
             x = inputs
             x = self.layer_norm_1(x)
-            x = self.causal_attention(x)
+            x = self.dropout(self.causal_attention(x))
             x = self.layer_norm_2(x)
-            x = self.mlp(x)
+            x = self.dropout(self.mlp(x))
             return x
 
 class Embed(nn.Module):
@@ -65,10 +66,11 @@ class TransformerLM(nn.Module):
             mlp_hidden_size: int,
             with_residuals: bool,
             pre_norm: bool = True,
+            dropout: float = 0.0,
             ):
         super().__init__()
         self.embed = Embed(vocab_size, embed_size, max_context_len)
-        self.layers = nn.ModuleList([TransformerDecoderBlock(n_heads, embed_size, mlp_hidden_size, max_context_len, with_residuals, pre_norm) for _ in range(n_layers)])
+        self.layers = nn.ModuleList([TransformerDecoderBlock(n_heads, embed_size, mlp_hidden_size, max_context_len, with_residuals, pre_norm, dropout) for _ in range(n_layers)])
         self.layer_norm = nn.LayerNorm(embed_size)
         self.word_prediction = nn.Linear(embed_size, vocab_size)
         self.max_context_len = max_context_len
@@ -119,9 +121,39 @@ class TransformerLM(nn.Module):
         return generated
 
     def better_sample_continuation(self, prefix: list[int], max_tokens_to_generate: int, temperature: float, topK: int) -> list[int]:
-        raise Exception("Not implemented")
-        # TODO implement this.
-        # Temperature should be the temperature in which you sample.
-        # TopK indicates that we don't sample from the entire distribution, but only from the top k scoring tokens
-        # for the given position.
+        if temperature <= 0:
+            raise ValueError("temperature must be > 0")
+
+        feed_to_lm = prefix[:]
+        generated = []
+        device = next(self.parameters()).device
+
+        with torch.no_grad():
+            while len(generated) < max_tokens_to_generate:
+                if len(feed_to_lm) > self.max_context_len:
+                    # If we have more tokens than context length, trim to context length.
+                    feed_to_lm = feed_to_lm[-self.max_context_len:]
+
+                logits = self(torch.tensor([feed_to_lm], dtype=torch.long, device=device))
+                logits_for_last_token = logits[0][-1]
+
+                # Temperature scaling: softmax(logits / temperature)
+                scaled_logits = logits_for_last_token / temperature
+
+                # Top-k filtering keeps only the k highest-scoring tokens.
+                k = min(topK, scaled_logits.size(-1))
+                if k > 0:
+                    topk_logits, topk_indices = torch.topk(scaled_logits, k)
+                    topk_distribution = F.softmax(topk_logits, dim=-1)
+                    sampled_idx_in_topk = torch.multinomial(topk_distribution, num_samples=1)
+                    sampled_token_id = topk_indices[sampled_idx_in_topk].item()
+                else:
+                    distribution_for_last_token = F.softmax(scaled_logits, dim=-1)
+                    sampled_token = torch.multinomial(distribution_for_last_token, num_samples=1)
+                    sampled_token_id = sampled_token.item()
+
+                generated.append(sampled_token_id)
+                feed_to_lm.append(sampled_token_id)
+
+        return generated
 
