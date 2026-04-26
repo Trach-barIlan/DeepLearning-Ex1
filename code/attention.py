@@ -33,7 +33,7 @@ def create_causal_mask(embed_dim, n_heads, max_context_len):
     # it is part of an assignment, and I want you to figure out on your own which arguments
     # are relevant.
 
-    mask = torch.tril(torch.ones(max_context_len, max_context_len))
+    mask = torch.tril(torch.ones(max_context_len, max_context_len)).unsqueeze(0)
     return mask
 
 def self_attention(v, A, mask = None):

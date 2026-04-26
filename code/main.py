@@ -68,6 +68,36 @@ def evaluate_model(model, data_iter, batch_size, device, n_batches):
     return validation_loss, validation_perplexity
 
 
+def split_tokenized_data(tokenized_data, validation_split, min_sequence_len):
+    if validation_split <= 0:
+        return tokenized_data, []
+
+    train_data = []
+    validation_data = []
+
+    for seq in tokenized_data:
+        # Keep short sequences entirely in train if they cannot provide both splits.
+        if len(seq) < 2 * min_sequence_len:
+            train_data.append(seq)
+            continue
+
+        val_len = int(len(seq) * validation_split)
+        val_len = max(min_sequence_len, val_len)
+        val_len = min(val_len, len(seq) - min_sequence_len)
+
+        split_idx = len(seq) - val_len
+        train_seq = seq[:split_idx]
+        val_seq = seq[split_idx:]
+
+        if len(train_seq) >= min_sequence_len and len(val_seq) >= min_sequence_len:
+            train_data.append(train_seq)
+            validation_data.append(val_seq)
+        else:
+            train_data.append(seq)
+
+    return train_data, validation_data
+
+
 if __name__ == "__main__":
     import lm
     from torch import optim
@@ -169,19 +199,21 @@ if __name__ == "__main__":
 
     shuffled_data = list(tokenized_data)
     random.shuffle(shuffled_data)
-    validation_count = int(len(shuffled_data) * validation_split)
-    if len(shuffled_data) > 1 and validation_split > 0 and validation_count == 0:
-        validation_count = 1
-    if validation_count >= len(shuffled_data):
-        validation_count = max(0, len(shuffled_data) - 1)
+    min_sequence_len = seq_len + 1
+    train_data, validation_data = split_tokenized_data(
+        shuffled_data,
+        validation_split,
+        min_sequence_len,
+    )
 
-    validation_data = shuffled_data[:validation_count]
-    train_data = shuffled_data[validation_count:] if validation_count > 0 else shuffled_data
+    if len(validation_data) == 0 and validation_split > 0:
+        print("Validation split requested but produced no usable validation chunks; skipping validation.")
+    print(f"Data split | train_sequences={len(train_data)} | validation_sequences={len(validation_data)}")
 
     # NOTE: data items are longer by one than the sequence length,
     # They will be shortened by 1 when converted to training examples.
-    data_iter = iter(data.RandomOrderDataIterator(train_data, seq_len + 1))
-    validation_iter = iter(data.RandomOrderDataIterator(validation_data, seq_len + 1)) if len(validation_data) > 0 else None
+    data_iter = iter(data.RandomOrderDataIterator(train_data, min_sequence_len))
+    validation_iter = iter(data.RandomOrderDataIterator(validation_data, min_sequence_len)) if len(validation_data) > 0 else None
 
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate, betas=[0.9, 0.95])
 
